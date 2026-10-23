@@ -721,7 +721,11 @@ public class ExecutionService {
             taskRun -> taskRun.getId().equals(taskRunId)
         );
 
-        Execution newExecution = execution.withMetadata(execution.getMetadata().nextAttempt());
+        // a terminated execution already gave its slot back, but a paused one being resumed still holds it
+        ExecutionMetadata nextAttempt = execution.getMetadata().nextAttempt();
+        Execution newExecution = execution.withMetadata(
+            execution.getState().isTerminated() ? nextAttempt : nextAttempt.withConcurrencyScopes(execution.getMetadata().getConcurrencyScopes())
+        );
 
         final FlowWithSource flowWithSource = flow instanceof FlowWithSource fws ? fws : flowParsingService.parse(flow, false);
 
